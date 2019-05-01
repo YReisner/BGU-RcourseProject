@@ -10,8 +10,26 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(MASS)
+```
+
+Yoav Directory
+```{r}
+dataset <- fread('C:\\Yoav\\R\\RProject - Master\\bgurcourse2019\\test.csv')
+```
+Liad Directory
+```{r}
+dataset <- fread
 
 ```
+Carmel Directory
+```{r}
+dataset <- fread
+```
+
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
