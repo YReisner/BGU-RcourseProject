@@ -19,7 +19,7 @@ library(sqldf)
 
 Yoav Directory
 ```{r}
-f <- fread ('C:\\Yoav\\R\\RProject - Master\\bgurcourse2019\\train.csv',nrows = 1000000)
+dataset <- fread ('C:\\Yoav\\R\\RProject - Master\\bgurcourse2019\\train.csv',nrows = 1000000)
 ```
 Liad Directory
 ```{r}
