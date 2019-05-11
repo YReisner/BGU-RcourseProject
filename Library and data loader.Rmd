@@ -14,11 +14,12 @@ library(data.table)
 library(magrittr)
 library(ggplot2)
 library(MASS)
+library(sqldf)
 ```
 
 Yoav Directory
 ```{r}
-dataset <- fread('C:\\Yoav\\R\\RProject - Master\\bgurcourse2019\\train.csv')
+f <- fread ('C:\\Yoav\\R\\RProject - Master\\bgurcourse2019\\train.csv',nrows = 1000000)
 ```
 Liad Directory
 ```{r}
