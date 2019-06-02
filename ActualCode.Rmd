@@ -17,7 +17,7 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 ```{r}
 indices <- sample(x = c(TRUE,FALSE),
        size = nrow(dataset),
-       prob = c(0.5, 0.5),
+       prob = c(0.008, 1-0.008),
        replace = TRUE)
 
 DataSample <- dataset[indices,]
@@ -25,10 +25,9 @@ rm(dataset,indices)
 ```
 
 
-
-
 ```{r}
 CleanData <- DataSample[,-"V1"]
+rm(DataSample)
 CleanData <- CleanData[!is.na(temp),]
 CleanData <- CleanData[,-"mdct"]
 CleanData <- CleanData[,-"date"]
@@ -39,12 +38,12 @@ CleanData <- CleanData[,-'smax']
 CleanData <- CleanData[,-'smin']
 CleanData <- CleanData[,-'da']
 CleanData <- CleanData[,-'inme']
-CleanData <- CleanData[,-'lat']
-CleanData <- CleanData[,-'lon']
 CleanData <- CleanData[,-'wsid'] #Might important, if we get high MSE maybe keep it somehow
 CleanData <- CleanData[,-'wsnm']
 ```
 
+
+Some EDA
 ```{r}
 Serop <- as.data.table(CleanData[city == 'Campos do Jordão',]) # I did this for multiple cities to check if there are differences between stations
 boxplot(data = Serop, temp~wsid)
@@ -74,6 +73,18 @@ Mgdrb <- mean(CleanData$gbrd, na.rm = TRUE)
 
 CleanData[is.na(gbrd),gbrd := Mgdrb] # Replacing gbrd NA with mean. Not sure this is a good solution, but it is a good variable, so let's try to keep it
 
+```
+
+
+Dealing with Geographical Data
+```{r}
+CleanData[,x:=cos(lat) * cos(lon)]
+CleanData[,y:=cos(lat) * sin(lon)]
+CleanData[,z:=sin(lat)]
+
+CleanData <- CleanData[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
+CleanData <- CleanData[,-'lat']
+```
 ```
 
 GBRD WITH LM - Replacing all NA values in gbrd with the prediction from tmax
