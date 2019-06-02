@@ -82,6 +82,12 @@ CleanData[,x:=cos(lat) * cos(lon)]
 CleanData[,y:=cos(lat) * sin(lon)]
 CleanData[,z:=sin(lat)]
 
+xpoint = 0.6260499
+ypoint = -0.08099196
+CleanData[,try:=sqrt((x-xpoint)**2+(y-ypoint)**2)]
+boxplot(CleanData$temp~CleanData$try)
+
+
 CleanData <- CleanData[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
 CleanData <- CleanData[,-'lat']
 ```
