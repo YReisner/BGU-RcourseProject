@@ -5,20 +5,286 @@ editor_options:
   chunk_output_type: console
 ---
 
+
+blahhhhhh
+
+
+
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-dataset %>% names
-dataset %>% head()
-dataset$wsnm %>% table()
+indices <- sample(x = c(TRUE,FALSE),
+       size = nrow(dataset),
+       prob = c(0.5, 0.5),
+       replace = TRUE)
 
-ggplot(dataset, aes(tmin, dmin)) + geom_point()
-dataset [dmin > 0 & tmin <= 0, .SR:=NULL,]
+DataSample <- dataset[indices,]
+rm(dataset,indices)
+```
 
-boxplot (dataset$dmin~dataset$prov)
-       
+
+
+
+```{r}
+CleanData <- DataSample[,-"V1"]
+CleanData <- CleanData[!is.na(temp),]
+CleanData <- CleanData[,-"mdct"]
+CleanData <- CleanData[,-"date"]
+CleanData <- CleanData[,-'prov']
+CleanData <- CleanData[,-'prcp']
+CleanData <- CleanData[,-'dmax']
+CleanData <- CleanData[,-'smax']
+CleanData <- CleanData[,-'smin']
+CleanData <- CleanData[,-'da']
+CleanData <- CleanData[,-'inme']
+CleanData <- CleanData[,-'lat']
+CleanData <- CleanData[,-'lon']
+CleanData <- CleanData[,-'wsid'] #Might important, if we get high MSE maybe keep it somehow
+CleanData <- CleanData[,-'wsnm']
+```
+
+```{r}
+Serop <- as.data.table(CleanData[city == 'Campos do Jordão',]) # I did this for multiple cities to check if there are differences between stations
+boxplot(data = Serop, temp~wsid)
+
+CleanData$prov %>% table
+Serop <- as.data.table(CleanData[prov == 'RJ',]) # I did this for all provinces to check if there are differences between cities
+boxplot(data = Serop, temp~city)
+
+boxplot(data = CleanData, temp~prov)
+
+ # No differences between provinces, let's remove
+
+
+CleanData$prcp %>% table
+CleanData[!is.na(prcp),.N]
+?plotly
+p <- ggplot(CleanData,aes(prcp,temp)) + geom_point()# Even if we have prcp, it doesn't tell us anything about temp. let's remove
+ggplotly(p)
+CleanData[]
+cor.test(CleanData$temp,CleanData$prcp, na.action(rm)) #Linear Correlation
+
+
+ggplot(CleanData,aes(gbrd,temp)) + geom_point()
+boxplot(CleanData$gbrd~CleanData$wsid, na.action(rm))
+boxplot(CleanData$gbrd)
+Mgdrb <- mean(CleanData$gbrd, na.rm = TRUE)
+
+CleanData[is.na(gbrd),gbrd := Mgdrb] # Replacing gbrd NA with mean. Not sure this is a good solution, but it is a good variable, so let's try to keep it
+
+```
+
+GBRD WITH LM - Replacing all NA values in gbrd with the prediction from tmax
+```{r}
+CleanData[is.na(gbrd),.N]
+ggplot(CleanData,aes(gbrd,tmin)) + geom_point()
+gbModel <- lm(gbrd~tmin, data = CleanData)
+summary(gbModel)
+
+CleanData[is.na(gbrd),gbrd := predict(gbModel, newdata = data.frame(tmin = CleanData[is.na(gbrd), tmin]))]
+CleanData[gbrd < 0, gbrd := 0]
+ggplot(CleanData,aes(gbrd,temp)) + geom_point()
+CleanData[is.na(gbrd), .N]
+```
+
+Treating gust with Median
+```{r}
+CleanData[is.na(gust),.N]
+ggplot(CleanData,aes(gust,temp)) + geom_point()
+Mgust <- median(CleanData$gust, na.rm = TRUE)
+CleanData[is.na(gust), gust:=Mgust]
+```
+
+wdct has no NA on train
+```{r}
+CleanData[is.na(wdct),.N]
+ggplot(CleanData,aes(wdct,temp)) + geom_point()
+Mwdct <- median(CleanData$wdct, na.rm = TRUE)
+CleanData[is.na(wdct), gust:=Mwdct]
+```
+
+wdsp - same as gust
+```{r}
+CleanData[is.na(wdsp),.N]
+ggplot(CleanData,aes(wdsp,temp)) + geom_point()
+Mwdsp <- median(CleanData$wdsp, na.rm = TRUE)
+CleanData[is.na(wdsp), wdsp:=Mwdsp]
+```
+
+hmin doesn't have na
+```{r}
+CleanData[is.na(hmin),.N]
+ggplot(CleanData,aes(hmin,temp)) + geom_point()
+Mhmin <- median(CleanData$hmin, na.rm = TRUE)
+CleanData[is.na(hmin), hmin:=Mhmin]
+```
+
+hmax doesn't have na
+```{r}
+CleanData[is.na(hmax),.N]
+ggplot(CleanData,aes(hmax,temp)) + geom_point()
+Mhmax <- median(CleanData$hmax, na.rm = TRUE)
+CleanData[is.na(hmax), hmax:=Mhmax]
+
+```
+
+hmdy doesn't have na
+```{r}
+CleanData[is.na(hmdy),.N]
+ggplot(CleanData,aes(hmdy,temp)) + geom_point()
+Mhmdy <- median(CleanData$hmdy, na.rm = TRUE)
+CleanData[is.na(hmin), hmdy:=Mhmdy]
+```
+
+dmin - so little na we just did median. Doesn't really matter
+```{r}
+CleanData[is.na(dmin),.N]
+ggplot(CleanData,aes(dmin,temp)) + geom_point()
+Mdmin <- median(CleanData$dmin, na.rm = TRUE)
+CleanData[is.na(dmin), dmin:=Mdmin]
+```
+
+tmin
+```{r}
+CleanData[is.na(tmin),.N]
+ggplot(CleanData,aes(tmin,temp)) + geom_point()
+Mtmin <- median(CleanData$tmin, na.rm = TRUE)
+CleanData[is.na(tmin), tmin:=Mtmin]
+```
+
+tmax
+```{r}
+CleanData[is.na(tmax),.N]
+ggplot(CleanData,aes(tmax,temp)) + geom_point()
+Mtmax <- median(CleanData$tmax, na.rm = TRUE)
+CleanData[is.na(tmax), tmax:=Mtmax]
+```
+
+dewp
+```{r}
+CleanData[is.na(dewp),.N]
+ggplot(CleanData,aes(dewp,temp)) + geom_point()
+Mdewp <- median(CleanData$dewp, na.rm = TRUE)
+CleanData[is.na(dewp), dewp:=Mdewp]
+```
+
+
+stp
+```{r}
+CleanData[is.na(stp),.N]
+ggplot(CleanData,aes(stp,temp)) + geom_point()
+Mstp <- median(CleanData$stp, na.rm = TRUE)
+CleanData[is.na(stp), stp:=Mstp]
+```
+
+hr
+```{r}
+CleanData[is.na(hr),.N]
+ggplot(CleanData,aes(hr,temp)) + geom_point()
+Mhr <- median(CleanData$hr, na.rm = TRUE)
+CleanData[is.na(hr), hr:=Mhr]
+```
+
+
+mo
+```{r}
+CleanData[is.na(mo),.N]
+ggplot(CleanData,aes(mo,temp)) + geom_point()
+Mmo <- median(CleanData$mo, na.rm = TRUE)
+CleanData[is.na(mo), mo:=Mmo]
+```
+
+
+yr - a little weird. If we don't get good MSE we might remove this
+```{r}
+CleanData[is.na(yr),.N]
+ggplot(CleanData,aes(yr,temp)) + geom_point()
+boxplot(temp~yr, CleanData)
+Myr <- median(CleanData$yr, na.rm = TRUE)
+CleanData[is.na(yr), yr:=Myr]
+```
+
+```{r}
+CleanData[,city] %>% table
+aggregate(temp~city, data = CleanData, FUN = mean)
+
+```
+
+
+
+elvt
+```{r}
+CleanData[is.na(elvt),.N]
+ggplot(CleanData,aes(elvt,temp)) + geom_point()
+boxplot(temp~elvt, CleanData)
+Melvt <- median(CleanData$elvt, na.rm = TRUE)
+CleanData[is.na(elvt), elvt:=Melvt]
+```
+
+scaling
+```{r}
+CleanData[,1 := CleanData[,1] %>% scale]
+
+ CleanData[,3:= CleanData[,3] %>% scale]
+CleanData[,4:= CleanData[,4] %>% scale]
+CleanData[,5:= CleanData[,5] %>% scale]
+CleanData[,6:= CleanData[,6] %>% scale]
+CleanData[,7:= CleanData[,7] %>% scale]
+CleanData[,9:= CleanData[,9] %>% scale]
+CleanData[,10:= CleanData[,10] %>% scale]
+CleanData[,11:= CleanData[,11] %>% scale]
+CleanData[,12:= CleanData[,12] %>% scale]
+CleanData[,13:= CleanData[,13] %>% scale]
+CleanData[,14:= CleanData[,14] %>% scale]
+CleanData[,15:= CleanData[,15] %>% scale]
+CleanData[,16:= CleanData[,16] %>% scale]
+CleanData[,17:= CleanData[,17] %>% scale]
+CleanData[,18:= CleanData[,18] %>% scale]
+
+```
+
+Preparing thr variables we are moving on with
+
+
+```{r}
+indices.train <- sample(x = 1:3,
+       size = nrow(CleanData),
+       prob = c(0.7,0.15,0.15),
+       replace = TRUE)
+
+Clean.Train <- CleanData[indices.train == 1,]
+Clean.Validation <- CleanData[indices.train == 2,]
+Clean.Test <- CleanData[indices.train == 3,]
+MSE <- function(x) x^2 %>% mean 
+```
+
+```{r}
+BaseModel <- lm(temp~tmin, data = Clean.Train)
+MSE(predict(BaseModel, newdata = Clean.Test)-Clean.Test$temp)
+```
+
+
+
+
+
+```{r}
+nn1 <- nnet(temp~elvt+factor(city)+yr+mo+hr+stp+gbrd+dewp+tmax+tmin+dmin+hmdy+hmax+hmin+wdsp+wdct+gust ,data = Train.Train, size=5, decay = 5e-4, maxit = 1000, trace=FALSE, linout=TRUE) # train
+  .predictions <- predict(.nn1, newdata=Train.Validation)
+  .errors <-  .predictions - Train.Validation$temp # save prediction errors in the fold
+  errors <- c(errors, .errors) # aggregate error over folds.
+
+# MSE of 0.2
+nn1 <- nnet(temp~elvt+factor(city)+yr+mo+hr+stp+gbrd+dewp+tmax+tmin+dmin+hmdy+hmax+hmin+wdsp+wdct+gust ,data = Train.Train, size=5, decay = 0.001, maxit = 500, trace=FALSE, linout=TRUE)
+
+MSE(predict(nn1, newdata = Clean.Validation) - Clean.Validation$temp)
+
+nn1 <- nnet(temp~elvt+factor(city)+yr+mo+hr+stp+gbrd+dewp+tmax+tmin+dmin+hmdy+hmax+hmin+wdsp+wdct+gust ,data = CleanData, size=8, decay = 0.0001, maxit = 350, trace=FALSE, linout=TRUE) # Favourite Model
+
+
+predict(nn1, newdata = Test)
+
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
