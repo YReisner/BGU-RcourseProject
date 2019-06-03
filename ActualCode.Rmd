@@ -82,15 +82,17 @@ CleanData[,x:=cos(lat) * cos(lon)]
 CleanData[,y:=cos(lat) * sin(lon)]
 CleanData[,z:=sin(lat)]
 
-xpoint = 0.6260499
-ypoint = -0.08099196
-CleanData[,try:=sqrt((x-xpoint)**2+(y-ypoint)**2)]
-boxplot(CleanData$temp~CleanData$try)
-
+components<- prcomp(CleanData[,21:23])
+screeplot(components)
+CleanData[,x:=components$x[,1],]
+CleanData[,y:=components$x[,2],]
+CleanData[,z:=components$x[,3],]
 
 CleanData <- CleanData[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
 CleanData <- CleanData[,-'lat']
-```
+
+
+scatterplot3d::scatterplot3d(CleanData$x,CleanData$y,CleanData$z)
 ```
 
 GBRD WITH LM - Replacing all NA values in gbrd with the prediction from tmax
