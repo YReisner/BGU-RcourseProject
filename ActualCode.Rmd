@@ -24,7 +24,7 @@ DataSample <- dataset[indices,]
 rm(dataset,indices)
 ```
 
-
+Removing Variables
 ```{r}
 CleanData <- DataSample[,-"V1"]
 rm(DataSample)
@@ -76,24 +76,35 @@ CleanData[is.na(gbrd),gbrd := Mgdrb] # Replacing gbrd NA with mean. Not sure thi
 ```
 
 
-Dealing with Geographical Data
+Dealing with Geographical Data option 1
 ```{r}
 CleanData[,x:=cos(lat) * cos(lon)]
 CleanData[,y:=cos(lat) * sin(lon)]
 CleanData[,z:=sin(lat)]
 
-components<- prcomp(CleanData[,21:23])
-screeplot(components)
-CleanData[,x:=components$x[,1],]
-CleanData[,y:=components$x[,2],]
-CleanData[,z:=components$x[,3],]
 
 CleanData <- CleanData[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
 CleanData <- CleanData[,-'lat']
 
-
+??discretasize
 scatterplot3d::scatterplot3d(CleanData$x,CleanData$y,CleanData$z)
+ggplot(CleanData,aes(x,y)) + geom_point(aescolor = (arules::discretize(CleanData$temp)))
 ```
+
+
+Option 2
+```{r}
+components<- prcomp(CleanData[,21:23])
+screeplot(components)
+CleanData[,x:=components$x[,1],]
+CleanData[,y:=components$x[,2],]
+
+
+CleanData <- CleanData[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
+CleanData <- CleanData[,-'lat']
+```
+
+
 
 GBRD WITH LM - Replacing all NA values in gbrd with the prediction from tmax
 ```{r}
@@ -302,9 +313,212 @@ MSE(predict(nn1, newdata = Clean.Validation) - Clean.Validation$temp)
 nn1 <- nnet(temp~elvt+factor(city)+yr+mo+hr+stp+gbrd+dewp+tmax+tmin+dmin+hmdy+hmax+hmin+wdsp+wdct+gust ,data = CleanData, size=8, decay = 0.0001, maxit = 350, trace=FALSE, linout=TRUE) # Favourite Model
 
 
-predict(nn1, newdata = Test)
+```
+
+
+
+Test:
+```{r}
+test <- fread ('C:\\Yoav\\R\\RProject - Master\\bgurcourse2019\\Test')
+```
+
+
+```{r}
+
+test <- test[,-"mdct"]
+test <- test[,-"date"]
+test <- test[,-'prov']
+test <- test[,-'prcp']
+test <- test[,-'dmax']
+test <- test[,-'smax']
+test <- test[,-'smin']
+test <- test[,-'da']
+test <- test[,-'inme']
+test <- test[,-'wsid'] #Might important, if we get high MSE maybe keep it somehow
+test <- test[,-'wsnm']
+```
+
+Dealing with Geographical Data option 1
+```{r}
+test[,x:=cos(lat) * cos(lon)]
+test[,y:=cos(lat) * sin(lon)]
+test[,z:=sin(lat)]
+
+
+test <- test[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
+test <- test[,-'lat']
+
 
 ```
+
+
+Option 2
+```{r}
+components<- prcomp(test[,])
+
+test[,x:=components$x[,1],]
+# test[,y:=components$x[,2],]
+
+
+test <- test[,-'lon'] #Might important, if we get high MSE maybe keep it somehow
+test <- test[,-'lat']
+```
+
+
+tmin
+```{r}
+test[is.na(tmin),.N]
+test[is.na(tmin), tmin:=Mtmin]
+```
+
+GBRD WITH LM - Replacing all NA values in gbrd with the prediction from tmin
+```{r}
+test[is.na(gbrd),.N]
+
+test[is.na(gbrd),gbrd := predict(gbModel, newdata = data.frame(tmin = test[is.na(gbrd), tmin]))]
+test[gbrd < 0, gbrd := 0]
+test[is.na(gbrd), .N]
+```
+
+Treating gust with Median
+```{r}
+test[is.na(gust),.N]
+test[is.na(gust), gust:=Mgust]
+test[is.na(gust),.N]
+```
+
+wdct has no NA on train
+```{r}
+test[is.na(wdct),.N]
+CleanData[is.na(wdct), gust:=Mwdct]
+test[is.na(wdct),.N]
+```
+
+wdsp - same as gust
+```{r}
+test[is.na(wdsp),.N]
+test[is.na(wdsp), wdsp:=Mwdsp]
+test[is.na(wdsp),.N]
+```
+
+hmin doesn't have na
+```{r}
+test[is.na(hmin),.N]
+test[is.na(hmin), hmin:=Mhmin]
+test[is.na(hmin),.N]
+```
+
+hmax doesn't have na
+```{r}
+test[is.na(hmax),.N]
+test[is.na(hmax), hmax:=Mhmax]
+test[is.na(hmax),.N]
+
+```
+
+hmdy doesn't have na
+```{r}
+test[is.na(hmdy),.N]
+CleanData[is.na(hmin), hmdy:=Mhmdy]
+```
+
+dmin - so little na we just did median. Doesn't really matter
+```{r}
+test[is.na(dmin),.N]
+test[is.na(dmin), dmin:=Mdmin]
+```
+
+
+
+tmax
+```{r}
+test[is.na(tmax),.N]
+test[is.na(tmax), tmax:=Mtmax]
+```
+
+dewp
+```{r}
+test[is.na(dewp),.N]
+test[is.na(dewp), dewp:=Mdewp]
+test[is.na(dewp),.N]
+
+```
+
+
+stp
+```{r}
+test[is.na(stp),.N]
+test[is.na(stp), stp:=Mstp]
+```
+
+hr
+```{r}
+test[is.na(hr),.N]
+test[is.na(hr), hr:=Mhr]
+```
+
+
+mo
+```{r}
+test[is.na(mo),.N]
+test[is.na(mo), mo:=Mmo]
+```
+
+
+yr - a little weird. If we don't get good MSE we might remove this
+```{r}
+test[is.na(yr),.N]
+test[is.na(yr), yr:=Myr]
+```
+
+
+elvt
+```{r}
+test[is.na(elvt),.N]
+test[is.na(elvt), elvt:=Melvt]
+```
+
+scaling
+```{r}
+test[,1 := test[,1] %>% scale]
+
+ test[,3:= test[,3] %>% scale]
+test[,4:= test[,4] %>% scale]
+test[,5:= test[,5] %>% scale]
+test[,6:= test[,6] %>% scale]
+test[,7:= test[,7] %>% scale]
+test[,9:= test[,9] %>% scale]
+test[,10:= test[,10] %>% scale]
+test[,11:= test[,11] %>% scale]
+test[,12:= test[,12] %>% scale]
+test[,13:= test[,13] %>% scale]
+test[,14:= test[,14] %>% scale]
+test[,15:= test[,15] %>% scale]
+test[,16:= test[,16] %>% scale]
+test[,17:= test[,17] %>% scale]
+test[,18:= test[,18] %>% scale]
+
+```
+
+
+
+```{r}
+done <- predict(nn1, newdata = Test)
+
+
+
+write.csv(done)
+```
+
+
+
+
+
+
+
+
+
+
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
